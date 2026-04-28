@@ -30,6 +30,24 @@ body {
   animation: pageIntro 1.3s ease-out forwards;
 }
 
+.loading-dots {
+  display: inline-flex;
+  margin-left: 0.25rem;
+}
+.loading-dots span {
+  opacity: 0.3;
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+.loading-dots span:nth-child(1) { animation-delay: 0s; }
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+.loading-dots span:nth-child(4) { animation-delay: 0.6s; }
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+
 .hidden { display: none !important; }
 
 /* --- ANIMATED BACKGROUND BLOBS --- */
