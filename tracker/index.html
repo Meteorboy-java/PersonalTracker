@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevOps Master Planner</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="blob shape1"></div>
+  <div class="blob shape2"></div>
+
+  <div id="loading-screen" class="glass-panel">
+    <h2 class="pulse-text">Syncing with Database...</h2>
+  </div>
+
+  <main id="app-container" class="hidden">
+    
+    <header class="header">
+      <h1 class="gradient-text text-pop">DevOps Master Planner</h1>
+      <div id="auth-container"></div>
+    </header>
+
+    <section class="glass-panel dashboard float-anim">
+      <div class="dashboard-header">
+        <div>
+          <h2>Your Progress</h2>
+          <p class="subtitle">Estimated Completion: <span id="est-date" class="highlight"></span></p>
+        </div>
+        <div class="text-right">
+          <span id="progress-text" class="gradient-text huge-text">0%</span>
+          <p class="subtitle"><span id="completed-count">0</span> / 52 Modules</p>
+        </div>
+      </div>
+      
+      <div class="progress-track">
+        <div id="progress-bar" class="progress-fill animated-stripes"></div>
+      </div>
+    </section>
+
+    <nav class="tabs">
+      <button id="tab-roadmap" class="tab active-tab bouncy">📚 Roadmap</button>
+      <button id="tab-projects" class="tab inactive-tab bouncy">🚀 Projects</button>
+    </nav>
+
+    <div id="view-only-warning" class="warning-box hidden pulse-anim">
+      View-only mode. Enter admin password to tick off skills.
+    </div>
+
+    <div id="roadmap-content" class="content-grid slide-up"></div>
+    <div id="projects-content" class="content-grid hidden"></div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
