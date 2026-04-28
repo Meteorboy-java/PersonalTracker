@@ -1,6 +1,6 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwFxsj40cP9_JcNBh3bmjIrBkq4zMaqi2m0SF6KFjMTkLCe89M_hXRieJHWRZsyfdxW/exec"; // PASTE YOUR URL HERE!
+const API_URL = "https://script.google.com/macros/s/YOUR_UNIQUE_ID/exec"; // PASTE YOUR URL HERE!
 
-// --- 1. UPDATED DATA WITH DEEP-DIVE TOPICS ---
+// --- 1. THE DATA ---
 const roadmapData = [
   {
     phase: "Phase 1: Linux & The Command Line",
@@ -101,10 +101,108 @@ const roadmapData = [
   }
 ];
 
-// ... (KEEP projectsData EXACTLY THE SAME) ...
+const projectsData = [
+  {
+    id: "p1", title: "Containerized Calculator Tool",
+    desc: "Dockerize your mutual fund calculator and serve it via Nginx.",
+    diff: "Medium", requiredSkills: ["w1", "w12", "w14", "w15", "w18"]
+  },
+  {
+    id: "p2", title: "Infrastructure as Code API",
+    desc: "Deploy an entire AWS VPC, EC2, and RDS setup without clicking a button.",
+    diff: "Expert", requiredSkills: ["w19", "w20", "w22", "w25", "w31", "w32", "w36"]
+  },
+  {
+    id: "p3", title: "Automated Game Server",
+    desc: "A Minecraft server that auto-updates via GitHub Actions.",
+    diff: "Hard", requiredSkills: ["w16", "w22", "w39", "w41", "w43"]
+  },
+  {
+    id: "p4", title: "The Ultimate SaaS Capstone",
+    desc: "Global CDN frontend, load-balanced backend, full Grafana monitoring.",
+    diff: "Expert", requiredSkills: ["w21", "w26", "w28", "w43", "w46", "w47", "w51"]
+  }
+];
 
-// --- 2. UPDATED RENDER FUNCTION ---
-// (Find your existing renderRoadmap function and replace it with this)
+// --- 2. STATE VARIABLES ---
+let completedWeeks = [];
+let isAdmin = false;
+let activeTab = 'roadmap';
+const totalWeeks = 52;
+
+// --- 3. DOM ELEMENTS ---
+const els = {
+  loadingScreen: document.getElementById('loading-screen'),
+  appContainer: document.getElementById('app-container'),
+  authContainer: document.getElementById('auth-container'),
+  roadmapContent: document.getElementById('roadmap-content'),
+  projectsContent: document.getElementById('projects-content'),
+  viewOnlyWarning: document.getElementById('view-only-warning'),
+  progressText: document.getElementById('progress-text'),
+  progressBar: document.getElementById('progress-bar'),
+  completedCount: document.getElementById('completed-count'),
+  estDate: document.getElementById('est-date'),
+  tabRoadmap: document.getElementById('tab-roadmap'),
+  tabProjects: document.getElementById('tab-projects')
+};
+
+// --- 4. INITIALIZATION ---
+async function init() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    completedWeeks = Array.isArray(data) ? data : [];
+  } catch (err) { console.error("Database fetch failed", err); }
+  
+  els.loadingScreen.classList.add('hidden');
+  els.appContainer.classList.remove('hidden');
+  els.appContainer.classList.add('slide-up');
+  
+  setupListeners();
+  renderAll();
+}
+
+// --- 5. RENDER FUNCTIONS ---
+function renderAll() {
+  renderAuth(); 
+  renderDashboard(); 
+  renderRoadmap(); 
+  renderProjects();
+}
+
+function renderAuth() {
+  els.viewOnlyWarning.classList.toggle('hidden', isAdmin || activeTab !== 'roadmap');
+  
+  if (isAdmin) {
+    els.authContainer.innerHTML = `<button id="btn-lock" class="btn btn-purple">Lock Mode 🔒</button>`;
+    document.getElementById('btn-lock').onclick = () => { isAdmin = false; renderAll(); };
+  } else {
+    els.authContainer.innerHTML = `
+      <form id="login-form">
+        <input type="password" id="password-input" class="auth-input" placeholder="Admin Pass" />
+        <button type="submit" class="btn btn-purple">Unlock 🔓</button>
+      </form>
+    `;
+    document.getElementById('login-form').onsubmit = (e) => {
+      e.preventDefault();
+      if (document.getElementById('password-input').value === '0311') {
+        isAdmin = true; renderAll();
+      } else alert('Incorrect Password!');
+    };
+  }
+}
+
+function renderDashboard() {
+  const pct = Math.round((completedWeeks.length / totalWeeks) * 100) || 0;
+  els.progressText.innerText = `${pct}%`;
+  els.progressBar.style.width = `${pct}%`;
+  els.completedCount.innerText = completedWeeks.length;
+
+  const rem = totalWeeks - completedWeeks.length;
+  const d = new Date(); d.setDate(d.getDate() + (rem * 7));
+  els.estDate.innerText = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
 function renderRoadmap() {
   let html = '';
   roadmapData.forEach((p, index) => {
@@ -123,15 +221,13 @@ function renderRoadmap() {
     
     p.weeks.forEach(w => {
       const checked = completedWeeks.includes(w.id);
-      
-      // Generate the list items for the topics
       let topicsHtml = w.topics ? w.topics.map(t => `<li>${t}</li>`).join('') : '';
 
       html += `
         <div class="skill-item ${checked ? 'checked' : ''}" data-id="${w.id}">
           <div class="skill-header-row">
-            <div class="custom-checkbox" title="Mark Complete"></div>
-            <div style="flex: 1;">
+            <div class="custom-checkbox" title="Mark Complete" style="cursor:${isAdmin?'pointer':'not-allowed'}"></div>
+            <div style="flex: 1; cursor:pointer;">
               <p class="skill-title">${w.title}</p>
               <span class="tag tag-${w.diff.toLowerCase()}">${w.diff}</span>
             </div>
@@ -154,7 +250,29 @@ function renderRoadmap() {
   els.roadmapContent.innerHTML = html;
 }
 
-// --- 3. UPDATED EVENT LISTENER LOGIC ---
+function renderProjects() {
+  let html = '';
+  projectsData.forEach(p => {
+    const unlocked = p.requiredSkills.every(s => completedWeeks.includes(s));
+    let skillsHtml = p.requiredSkills.map(s => {
+      const done = completedWeeks.includes(s);
+      return `<span class="req-skill ${done ? 'req-done' : 'req-miss'}">${s.toUpperCase()} ${done?'✓':''}</span>`;
+    }).join('');
+
+    html += `
+      <div class="project-card ${unlocked ? 'unlocked' : 'locked'}">
+        <div class="badge ${unlocked ? 'badge-unlocked' : 'badge-locked'}">${unlocked ? '🔓 UNLOCKED' : '🔒 LOCKED'}</div>
+        <span class="tag tag-${p.diff.toLowerCase()}" style="margin-bottom:10px">${p.diff}</span>
+        <h2>${p.title}</h2>
+        <p style="color:var(--text-light); margin: 10px 0;">${p.desc}</p>
+        <div style="margin-top:15px"><p style="font-size:0.8rem; font-weight:bold; margin-bottom:5px">REQUIRED SKILLS</p>${skillsHtml}</div>
+      </div>
+    `;
+  });
+  els.projectsContent.innerHTML = html;
+}
+
+// --- 6. EVENT LISTENERS ---
 function setupListeners() {
   els.tabRoadmap.onclick = () => switchTab('roadmap');
   els.tabProjects.onclick = () => switchTab('projects');
@@ -163,7 +281,7 @@ function setupListeners() {
     const card = e.target.closest('.skill-item');
     if (!card) return;
 
-    // If they clicked the checkbox specifically, toggle completion (requires admin)
+    // Check if they clicked specifically on the checkbox
     if (e.target.closest('.custom-checkbox')) {
       if (isAdmin) {
         toggleWeek(card.dataset.id);
@@ -173,13 +291,48 @@ function setupListeners() {
       return;
     }
 
-    // If they clicked anywhere else on the card, toggle the deep-dive accordion
+    // Otherwise, expand/collapse the deep dive topics
     card.classList.toggle('expanded');
   };
 }
 
-// Global function to toggle the Phases
 window.togglePhase = function(element) {
   const card = element.closest('.phase-card');
   card.classList.toggle('expanded');
 };
+
+function switchTab(tab) {
+  activeTab = tab; renderAuth();
+  els.tabRoadmap.className = `tab ${tab==='roadmap'?'active-tab bouncy':'inactive-tab'}`;
+  els.tabProjects.className = `tab ${tab==='projects'?'active-tab bouncy':'inactive-tab'}`;
+  els.roadmapContent.classList.toggle('hidden', tab!=='roadmap');
+  els.projectsContent.classList.toggle('hidden', tab!=='projects');
+  
+  if (tab === 'roadmap') els.roadmapContent.classList.add('slide-up');
+  if (tab === 'projects') els.projectsContent.classList.add('slide-up');
+}
+
+async function toggleWeek(id) {
+  if (completedWeeks.includes(id)) {
+    completedWeeks = completedWeeks.filter(w => w !== id);
+  } else {
+    completedWeeks.push(id);
+  }
+  
+  renderDashboard(); 
+  renderRoadmap(); 
+  renderProjects();
+  
+  try {
+    await fetch(API_URL, { 
+      method: 'POST', 
+      body: JSON.stringify(completedWeeks), 
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
+  } catch (err) { 
+    console.error("Failed to sync database", err); 
+  }
+}
+
+// Start the app
+init();
